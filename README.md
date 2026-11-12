@@ -76,7 +76,11 @@ cp config.example.json config.json
 }
 ```
 
-授权码获取：电脑登录 [mail.qq.com](https://mail.qq.com)(或者你的目标邮箱) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。**注意不是 QQ 密码。**
+授权码获取：
+
+> 以qq邮箱为例，其他邮箱**注意host、port**这两个参数也要对应修改，一般邮箱开启「IMAP/SMTP 服务」后都会给出
+
+电脑登录 [mail.qq.com](https://mail.qq.com)(或者你的目标邮箱) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。**注意不是 QQ 密码。**
 
 不填 `smtp` 也可以用，只是不能推送，抓下来的通知只存到本地。
 
@@ -238,6 +242,8 @@ curl -s -o /dev/null -w "%{http_code}" \
 | `SMTP_USER` | 你的 QQ 邮箱 | 是 |
 | `SMTP_PASS` | QQ 邮箱授权码 | 是 |
 | `JW_BASE` | 反代函数 URL | 是（否则本科生院 403） |
+
+**使用别的邮箱要修改对应的host域名和port端口**，具体步骤参考**方式一第2步配置**
 
 > 没配 `JW_BASE` 也能跑，只是本科生院两个源会失败（8/10）；其余 8 个不受影响。
 
