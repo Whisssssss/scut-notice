@@ -20,7 +20,7 @@
 ## 快速开始
 
 ```bash
-git clone <your-repo-url> && cd scut-notice
+git clone https://github.com/Whisssssss/scut-notice.git && cd scut-notice
 cp config.example.json config.json
 # 编辑 config.json，填入 smtp 或 wecom_webhook
 python fetch.py --days 30
