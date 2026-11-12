@@ -34,7 +34,12 @@ def log(msg):
     print(msg, flush=True)
 
 def http_get(url, data=None, referer=None):
-    h = {"User-Agent": UA, "Accept-Language": "zh-CN,zh;q=0.9"}
+    h = {
+        "User-Agent": UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Cache-Control": "no-cache",
+    }
     if referer: h["Referer"] = referer
     if data is not None:
         data = urllib.parse.urlencode(data).encode()
@@ -503,6 +508,7 @@ def main():
             pm.append(f"- {it['date']} [{it['title']}]({it['url']})")
         push_message(f"华工通知 {today} 新增 {len(fresh_all)} 条", "\n".join(pm))
 
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
     with open(marker, "w") as mf:
         mf.write(today)
 
