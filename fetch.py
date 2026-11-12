@@ -378,6 +378,8 @@ def main():
     ap.add_argument("--only-jw", action="store_true", help="只抓本科生院（供国内云函数补跑）")
     ap.add_argument("--only-yesterday", action="store_true",
                     help="只推送昨天发布的通知（云函数无持久库时避免重复）")
+    ap.add_argument("--refetch-empty", action="store_true",
+                    help="正文为空的站内条目重新抓取（修复历史数据用）")
     ap.add_argument("--no-push", action="store_true", help="不推送")
     ap.add_argument("--once-per-day", action="store_true", help="今天已跑过则跳过（供开机自启去重）")
     ap.add_argument("--digest-only", action="store_true", help="不抓取，只从库重建当日简报")
@@ -422,6 +424,8 @@ def main():
 
     conn = open_db()
     known = {r[0] for r in conn.execute("SELECT uid FROM notices")}
+    if args.refetch_empty:
+        known -= {r[0] for r in conn.execute("SELECT uid FROM notices WHERE body=''")}
     fresh_all, n_src_ok = [], 0
 
     for idx, src in enumerate(CFG["sources"], 1):
@@ -468,7 +472,8 @@ def main():
         log(f"[{idx:2d}/{len(CFG['sources'])}] {label:16s} 列表{len(items):3d}  窗口内新增{len(fresh):3d}")
 
         for it in fresh:
-            ext = not re.search(r"scut\.edu\.cn", it["url"])
+            # 站内判定：scut.edu.cn 域名，或经国内反代（JW_BASE）访问的本科生院页面
+            ext = not (re.search(r"scut\.edu\.cn", it["url"]) or it["url"].startswith(JW_BASE))
             body, atts = "", []
             if not ext and not args.no_body:
                 try:
