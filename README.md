@@ -72,7 +72,7 @@ cp config.example.json config.json
 
 授权码获取：电脑登录 [mail.qq.com](https://mail.qq.com)(或者你的目标邮箱) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。**注意不是 QQ 密码。**
 
-不填 `smtp` 也可以用，只是不能推送、抓下来的通知只存到本地\digest目录下的**<日期>.md**文件中。
+不填 `smtp` 也可以用，只是不能推送，抓下来的通知只存到本地。
 
 ## 3. 运行
 
