@@ -8,6 +8,8 @@ on:
 
 jobs:
   crawl:
+    # 只在本人仓库运行：fork 后即使有人启用 Actions 也会跳过
+    if: github.repository_owner == 'Whisssssss'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
