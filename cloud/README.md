@@ -61,8 +61,11 @@ Windows 上执行：
 
 ### 1. 创建函数
 
+**选「Web 函数」**（不是事件函数）：反代是 HTTP 服务，Web 函数创建后直接有公网 URL。
+
 - 运行环境：Python 3.10
-- 请求处理程序：`proxy.handler`
+- 入口：`proxy_wsgi.handler`
+- 代码：粘贴 `cloud/proxy_wsgi.py`
 - 代码：粘贴 `cloud/proxy_handler.py` 的内容（或上传该文件）
 - 内存 128 MB，超时 60 秒
 - 开启 **函数 URL** 或 HTTP 触发器，记下分配的公网地址
