@@ -85,6 +85,55 @@ schtasks /Create /F /TN "SCUT-Notice-Daily" /TR "wscript.exe \"D:\\path\\run_hid
 > 注意：Actions 与本地计划任务**不要同时开**，两边数据库不共享，会造成重复推送。
 > 国外 runner 访问学校站点可能较慢，首次运行建议手动触发观察。
 
+## Fork 后自己跑（GitHub Actions）
+
+这个仓库的 workflow 默认只允许原作者账号运行。想在自己的账号下跑定时推送，按下面五步改：
+
+### 1. Fork
+
+右上角 **Fork** → 选择你的账号。fork 出来的仓库**默认不启用 Actions**。
+
+### 2. 启用 Actions
+
+进入你 fork 仓库的 **Actions** 页面，点击绿色的
+`I understand my workflows, go ahead and enable them`。
+
+### 3. 去掉 owner 限制
+
+打开 `.github/workflows/daily.yml` 和 `weekly.yml`，找到这一行：
+
+```yaml
+if: github.repository_owner == 'Whisssssss'
+```
+
+改成你的 GitHub 用户名，或整行删除（连同上一行注释）。**不改的话 job 会被直接跳过。**
+
+### 4. 配置 Secrets
+
+仓库 **Settings → Secrets and variables → Actions → New repository secret**，添加两个：
+
+| Name | Value |
+|---|---|
+| `SMTP_USER` | 你的 QQ 邮箱，如 `123456@qq.com` |
+| `SMTP_PASS` | QQ 邮箱授权码（**不是** QQ 密码） |
+
+授权码获取：电脑登录 [mail.qq.com](https://mail.qq.com) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。
+
+### 5. 手动触发验证
+
+**Actions → Daily Crawl → Run workflow**。约 1~2 分钟后看日志，确认两点：
+
+- `数据源成功 10/10`
+- `邮件推送成功 -> 134***@qq.com`（日志里的邮箱是打码的）
+
+成功后定时生效：每天北京时间 07:30（`cron: '30 23 * * *'`，UTC）。
+
+### 注意事项
+
+- fork 的 Actions cache 与原仓库**隔离**，第一次运行是空库，`--days 3` 只回填 3 天，之后逐日累积
+- 想回填更多，把 workflow 里的 `--days 3` 改成 `--days 30` 手动跑一次
+- **不要同时开本地计划任务和 Actions**，两边数据库不共享，会重复推送
+- 公开仓库的 Actions 运行日志任何人可读，所以脚本对邮箱做了打码；如果你改成打印其他敏感信息，记得同样处理
 ## 文件
 
 | 文件 | 作用 |
