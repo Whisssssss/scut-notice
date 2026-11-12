@@ -22,6 +22,12 @@ if not os.path.exists(CFG_PATH):
     sys.exit("未找到 config.json：请先复制 config.example.json 并填写推送配置")
 CFG = json.load(open(CFG_PATH, encoding="utf-8"))
 
+# 云函数等环境可用环境变量注入凭据，避免把 config.json 里的明文密码打包上传
+for _k, _env in (("user", "SMTP_USER"), ("password", "SMTP_PASS"), ("to", "SMTP_TO")):
+    _v = os.environ.get(_env)
+    if _v:
+        CFG.setdefault("smtp", {})[_k] = _v
+
 # 学校主站(www.scut.edu.cn / news.scut.edu.cn)只接受 legacy cipher，
 # OpenSSL 3.x 默认安全级别会直接 handshake failure，必须降到 SECLEVEL=0
 CTX = ssl.create_default_context()
@@ -362,6 +368,9 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="每个源最多处理条数（调试）")
     ap.add_argument("--no-body", action="store_true", help="不抓正文")
     ap.add_argument("--no-attach", action="store_true", help="不下载附件")
+    ap.add_argument("--only-jw", action="store_true", help="只抓本科生院（供国内云函数补跑）")
+    ap.add_argument("--only-yesterday", action="store_true",
+                    help="只推送昨天发布的通知（云函数无持久库时避免重复）")
     ap.add_argument("--no-push", action="store_true", help="不推送")
     ap.add_argument("--once-per-day", action="store_true", help="今天已跑过则跳过（供开机自启去重）")
     ap.add_argument("--digest-only", action="store_true", help="不抓取，只从库重建当日简报")
@@ -409,6 +418,8 @@ def main():
     fresh_all, n_src_ok = [], 0
 
     for idx, src in enumerate(CFG["sources"], 1):
+        if args.only_jw and src["type"] != "jw":
+            continue
         label = f"{src['site']}/{src['column']}"
         items = []
         try:
@@ -441,6 +452,9 @@ def main():
             it.update(uid=uid, site=src["site"], column=src["column"], _idx=idx)
             known.add(uid)
             fresh.append(it)
+        if args.only_yesterday:
+            _y = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            fresh = [it for it in fresh if it["date"] == _y]
         if args.limit:
             fresh = fresh[:args.limit]
 
