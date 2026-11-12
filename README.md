@@ -6,7 +6,7 @@
 
 纯 Python 标准库实现，**零第三方依赖**。
 
->给化院的本科生同学用的，会抓化院的网页消息♥
+>给化院的本科生同学用的，会抓化院的网页消息♥ 想要自定义扒取源的[**点这里**](docs/customize-sources.md)。
 
 ## 抓取范围
 
@@ -33,14 +33,16 @@
 
 | 方式 | 适合谁 | 需要什么 | 电脑要开机吗 |
 |---|---|---|---|
-| **方式一：本地运行** | 偶尔用、想完全掌控 | 自己的电脑 + Python 3.8+ | 要 |
-| **方式二：gh Actions** | 长期自动、不想管 | GitHub 账号 + 阿里云反代（一个号的免费额度够几百人用） | 不需要 |
+| **[方式一：本地运行](#method-local)** | 偶尔用、想完全掌控 | 自己的电脑 + Python 3.8+ | 要 |
+| **[方式二：gh Actions](#method-actions)** | 长期自动、不想管 | GitHub 账号 + 阿里云反代（一个号的免费额度够几百人用） | 不需要 |
 
 两种方式共用同一套 `fetch.py`，区别只在“谁来定时”和“谁去访问学校网站”。
 
 **注意**：两种方法不要双开，不然一天会收到两封完全相同的邮件
 
 ---
+
+<a id="method-local"></a>
 
 # 方式一：本地运行
 
@@ -122,6 +124,8 @@ schtasks /Delete /TN "SCUT-Notice-Daily" /F
 > `run.bat` / `run_hidden.vbs` / `run_task.bat` 是 Windows 专用，Linux 直接跑 `python3 fetch.py`。
 
 ---
+
+<a id="method-actions"></a>
 
 # 方式二：GitHub Actions（推荐）
 
