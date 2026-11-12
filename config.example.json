@@ -1,0 +1,88 @@
+{
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "timeout": 30,
+  "retry": 3,
+  "delay": 1,
+  "max_pages": 3,
+  "db": "scut.sqlite",
+  "data_dir": "data",
+  "digest_dir": "digest",
+  "wecom_webhook": "",
+  "smtp": {
+    "host": "smtp.qq.com",
+    "port": 465,
+    "user": "",
+    "password": "",
+    "to": ""
+  },
+  "sources": [
+    {
+      "site": "学校",
+      "column": "校园新闻",
+      "type": "boda",
+      "url": "https://news.scut.edu.cn/41/list.htm",
+      "base": "https://news.scut.edu.cn"
+    },
+    {
+      "site": "学校",
+      "column": "教学科研通知",
+      "type": "boda",
+      "url": "https://www.scut.edu.cn/new/9011/list.htm",
+      "base": "https://www.scut.edu.cn"
+    },
+    {
+      "site": "学校",
+      "column": "学术预告",
+      "type": "boda",
+      "url": "https://www.scut.edu.cn/new/9010/list.htm",
+      "base": "https://www.scut.edu.cn"
+    },
+    {
+      "site": "学院",
+      "column": "公务通知",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/ce/2511/list.htm",
+      "base": "https://www2.scut.edu.cn"
+    },
+    {
+      "site": "学院",
+      "column": "教务通知",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/ce/2512/list.htm",
+      "base": "https://www2.scut.edu.cn"
+    },
+    {
+      "site": "学院",
+      "column": "学术通知",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/ce/2513/list.htm",
+      "base": "https://www2.scut.edu.cn"
+    },
+    {
+      "site": "学院",
+      "column": "本科生通知",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/ce/_t1674/bkstz/list.htm",
+      "base": "https://www2.scut.edu.cn"
+    },
+    {
+      "site": "学院",
+      "column": "研究生通知",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/ce/_t1674/yjstz/list.htm",
+      "base": "https://www2.scut.edu.cn"
+    },
+    {
+      "site": "本科生院",
+      "column": "通知公告",
+      "type": "jw",
+      "category": 0
+    },
+    {
+      "site": "本科生院",
+      "column": "学院通知",
+      "type": "jw",
+      "category": 1
+    }
+  ]
+}

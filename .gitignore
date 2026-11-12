@@ -1,0 +1,15 @@
+# 本地配置（含邮箱授权码等敏感信息）
+config.json
+
+# 抓取产物
+scut.sqlite
+scut.sqlite-*
+data/
+digest/
+logs/
+
+# 工具产物
+__pycache__/
+*.pyc
+.archify/
+.DS_Store
