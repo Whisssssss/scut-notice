@@ -178,6 +178,7 @@ Actions 的 runner 在国外，`jw.scut.edu.cn` 返回 403。用阿里云 FC 或
 4. 企业微信**外部群**不支持群机器人，自建应用也无法向群发消息
 5. 阿里云 FC 的 HTTP 网关**强制要求请求带 `Date` 头**，缺了返回 `MissingRequiredHeader`
 6. 阿里云 FC 的函数 URL 默认可能要求签名认证，需手动改成**匿名认证**，否则返回 `invalid authorization ''`
+7. 启用反代后，`ext`（是否外链）**不能只判断 `scut.edu.cn`**——反代域名不含这个字符串，会被误判为外链而静默跳过正文抓取。代码已改为同时识别 `JW_BASE` 前缀，历史空正文可用 `--refetch-empty` 补抓
 
 ## License
 
