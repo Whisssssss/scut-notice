@@ -7,7 +7,7 @@
   python fetch.py --limit 3         调试：每个源最多 3 条
   python fetch.py --no-body         只抓列表，不抓正文
 """
-import argparse, hashlib, json, os, re, smtplib, sqlite3, ssl, sys, time
+import argparse, email.utils, hashlib, json, os, re, smtplib, sqlite3, ssl, sys, time
 from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -50,6 +50,8 @@ def http_get(url, data=None, referer=None):
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "zh-CN,zh;q=0.9",
         "Cache-Control": "no-cache",
+        # 阿里云 FC 的 HTTP 网关强制要求请求带 Date 头
+        "Date": email.utils.formatdate(usegmt=True),
     }
     if referer: h["Referer"] = referer
     if data is not None:
