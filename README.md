@@ -158,6 +158,8 @@ if: github.repository_owner == 'Whisssssss'
 ## 已知限制
 
 - 电脑关机/睡眠时不运行（Windows 方案）；Linux 服务器或 GitHub Actions 可 7×24
+- **GitHub Actions 的 runner 在国外**：`jw.scut.edu.cn`（本科生院两个源）会返回 **403**，Actions 下只能跑 8/10 个源；需要全量请用本地或国内服务器
+- Actions 的数据库通过 `actions/cache` 跨运行保留（key 前缀 `db-`），首次运行是空库会回填，之后只推增量
 - 本科生院部分通知详情是跳转页，需登录教务系统，只保存标题和链接
 - 学院「学术通知」中有公众号文章外链，不抓正文
 - 博达 CMS 列表排序不严格倒序，去重必须用 URL 里的内容 ID
