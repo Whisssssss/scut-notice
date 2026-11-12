@@ -134,6 +134,10 @@ if: github.repository_owner == 'Whisssssss'
 - 想回填更多，把 workflow 里的 `--days 3` 改成 `--days 30` 手动跑一次
 - **不要同时开本地计划任务和 Actions**，两边数据库不共享，会重复推送
 - 公开仓库的 Actions 运行日志任何人可读，所以脚本对邮箱做了打码；如果你改成打印其他敏感信息，记得同样处理
+## 国内云函数补跑（本科生院）
+
+Actions 的 runner 在国外，`jw.scut.edu.cn` 返回 403。用阿里云 FC 或腾讯云 SCF 补跑这两个源，免费额度足够。代码和打包脚本已备好（`cloud_handler.py`、`make_cloud_package.ps1`），完整部署步骤见 [cloud/README.md](cloud/README.md)。
+
 ## 文件
 
 | 文件 | 作用 |
