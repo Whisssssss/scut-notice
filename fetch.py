@@ -252,6 +252,13 @@ def md_to_html(md):
     return ("<html><body style=\"font-family:system-ui,-apple-system,sans-serif;"
             "line-height:1.6;font-size:14px\">" + "\n".join(out) + "</body></html>")
 
+def _mask(addr):
+    """公开仓库的 Actions 日志是公开的，邮箱必须打码后再打印。"""
+    if "@" not in addr:
+        return addr
+    u, d = addr.split("@", 1)
+    return (u[:3] + "***@" + d) if len(u) > 3 else ("***@" + d)
+
 def push_email(title, markdown):
     s = CFG.get("smtp") or {}
     if not s.get("host") or not s.get("user"):
@@ -266,7 +273,7 @@ def push_email(title, markdown):
         with smtplib.SMTP_SSL(s["host"], int(s.get("port", 465)), timeout=30) as sm:
             sm.login(s["user"], s["password"])
             sm.sendmail(s["user"], [to], msg.as_string())
-        log(f"  邮件推送成功 -> {to}")
+        log(f"  邮件推送成功 -> {_mask(to)}")
     except Exception as e:
         log(f"  邮件推送失败: {e}")
     return True
