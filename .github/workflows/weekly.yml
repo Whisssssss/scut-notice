@@ -1,0 +1,42 @@
+name: Weekly Digest
+
+on:
+  schedule:
+    # UTC 周日 23:30 = 北京时间周一 07:30
+    - cron: '30 23 * * 0'
+  workflow_dispatch:
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore database
+        uses: actions/cache@v4
+        with:
+          path: scut.sqlite
+          key: db-${{ github.run_id }}
+          restore-keys: db-
+
+      - name: Build config from secrets
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          python - <<'EOF'
+          import json, os
+          cfg = json.load(open("config.example.json", encoding="utf-8"))
+          cfg["smtp"]["user"] = os.environ["SMTP_USER"]
+          cfg["smtp"]["password"] = os.environ["SMTP_PASS"]
+          cfg["smtp"]["to"] = os.environ["SMTP_USER"]
+          json.dump(cfg, open("config.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+          EOF
+
+      - name: Weekly report
+        run: python fetch.py --weekly

@@ -7,6 +7,7 @@ scut.sqlite-*
 data/
 digest/
 logs/
+attachments/
 
 # 工具产物
 __pycache__/

@@ -111,20 +111,66 @@ def to_text(frag):
     s = re.sub(r"\n{2,}", "\n\n", s)
     return s.strip()
 
+ATT_RE = re.compile(
+    r"""<a[^>]+href=["']([^"']+\.(?:pdf|docx?|xlsx?|zip|rar|pptx?))["'][^>]*>(.*?)</a>""",
+    re.I | re.S)
+
+def extract_attachments(html, page_url):
+    out, seen = [], set()
+    for m in ATT_RE.finditer(html):
+        href = urllib.parse.urljoin(page_url, m.group(1))
+        if href in seen:
+            continue
+        seen.add(href)
+        name = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+        if not name:
+            name = os.path.basename(urllib.parse.urlparse(href).path)
+        out.append({"url": href, "name": name[:80]})
+    return out
+
+def download_attachments(atts, pub_date, uid, page_url):
+    if not atts:
+        return []
+    folder = os.path.join(BASE, "attachments", pub_date.replace("-", ""),
+                          re.sub(r"[^0-9A-Za-z]+", "-", uid)[:32])
+    os.makedirs(folder, exist_ok=True)
+    saved = []
+    for a in atts[:5]:
+        base_name = re.sub(r"[\\/:*?\"<>|]", "_", a["name"])[:60] or "file"
+        ext = os.path.splitext(urllib.parse.urlparse(a["url"]).path)[1].lower()
+        if not os.path.splitext(base_name)[1]:
+            base_name += ext
+        path = os.path.join(folder, base_name)
+        if os.path.exists(path):
+            saved.append({"name": base_name, "path": os.path.relpath(path, BASE)})
+            continue
+        try:
+            req = urllib.request.Request(a["url"], headers={"User-Agent": UA, "Referer": page_url})
+            with urllib.request.urlopen(req, timeout=60, context=CTX) as r:
+                data = r.read(20 * 1024 * 1024)
+            with open(path, "wb") as f:
+                f.write(data)
+            saved.append({"name": base_name, "path": os.path.relpath(path, BASE), "size": len(data)})
+            log(f"       附件已存 {base_name} ({len(data)//1024} KB)")
+        except Exception as e:
+            log(f"       附件失败 {base_name}: {str(e)[:40]}")
+    return saved
+
 def fetch_body(url, kind):
     html = http_get(url, referer=url)
+    atts = extract_attachments(html, url)
     if kind == "jw":
         m = re.search(r'class="content"', html)
         if not m:
-            return ""
+            return "", atts
         start = html.rfind("<div", 0, m.start())
         frag = balanced_div(html, start)
         frag = re.sub(r"<h[35]\b[\s\S]*?</h[35]>", " ", frag, flags=re.I)
-        return to_text(frag)
+        return to_text(frag), atts
     i = html.find("wp_articlecontent")
     if i < 0:
-        return ""
-    return to_text(balanced_div(html, html.rfind("<div", 0, i)))
+        return "", atts
+    return to_text(balanced_div(html, html.rfind("<div", 0, i))), atts
 
 def make_uid(item):
     if "id" in item:
@@ -141,6 +187,9 @@ def open_db():
         uid TEXT PRIMARY KEY, site TEXT, column_name TEXT, title TEXT,
         url TEXT, pub_date TEXT, body TEXT, summary TEXT,
         external INTEGER DEFAULT 0, fetched_at TEXT)""")
+    columns = [r[1] for r in conn.execute("PRAGMA table_info(notices)")]
+    if "attachments" not in columns:
+        conn.execute("ALTER TABLE notices ADD COLUMN attachments TEXT DEFAULT ''")
     conn.commit()
     return conn
 
@@ -222,13 +271,15 @@ def push_email(title, markdown):
         log(f"  邮件推送失败: {e}")
     return True
 
-def build_digest_md(conn, today):
-    """从库生成当日简报，带可点击目录（GitHub / VS Code / Typora 均可跳转）。"""
+def build_report_md(conn, where_sql, params, heading):
+    """通用报告生成：带可点击目录，命中关注词的条目标 ⭐。"""
     rows = conn.execute(
         "SELECT site, column_name, title, url, pub_date, summary FROM notices "
-        "WHERE fetched_at=? ORDER BY pub_date DESC", (today,)).fetchall()
+        "WHERE " + where_sql + " ORDER BY pub_date DESC", params).fetchall()
     if not rows:
         return None
+    hl_kw = CFG.get("highlight_keywords", [])
+    hl_total = sum(1 for r in rows if any(k in r[2] for k in hl_kw))
 
     sites = []
     for s in CFG["sources"]:
@@ -238,7 +289,10 @@ def build_digest_md(conn, today):
     for r in rows:
         tree.setdefault(r[0], {}).setdefault(r[1], []).append(r)
 
-    lines = [f"# 华工通知日报 {today}", "", f"今日新增 **{len(rows)}** 条通知", "", "## 目录", ""]
+    lines = [f"# {heading}", "", f"共 **{len(rows)}** 条通知", ""]
+    if hl_kw:
+        lines += [f"> ⭐ 其中 **{hl_total}** 条命中关注词：{'、'.join(hl_kw)}", ""]
+    lines += ["## 目录", ""]
     for si, site in enumerate(sites):
         cols = [s for s in CFG["sources"] if s["site"] == site]
         total = sum(len(tree.get(site, {}).get(c["column"], [])) for c in cols)
@@ -262,11 +316,23 @@ def build_digest_md(conn, today):
                 continue
             lines += [f'<a id="col-{si}-{ci}"></a>', "", f"### {c['column']}", ""]
             for _, _, title, url, pub_date, summary in items:
-                lines.append(f"- **{pub_date}** [{title}]({url})")
+                hits = [k for k in hl_kw if k in title]
+                mark = "⭐ " if hits else ""
+                lines.append(f"- **{pub_date}** {mark}[{title}]({url})")
+                if hits:
+                    lines.append(f"  > 关注词：{'、'.join(hits)}")
                 if summary:
                     lines.append(f"  > {summary[:120]}")
             lines.append("")
     return "\n".join(lines)
+
+def build_digest_md(conn, today):
+    return build_report_md(conn, "fetched_at=?", (today,), f"华工通知日报 {today}")
+
+def build_weekly_md(conn, today):
+    start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    return build_report_md(conn, "pub_date>=?", (start,),
+                           f"华工通知周报 {start} ~ {today}")
 
 def push_message(title, markdown):
     sent = False
@@ -283,9 +349,11 @@ def main():
     ap.add_argument("--days", type=int, default=3, help="时间窗天数（回填用大值）")
     ap.add_argument("--limit", type=int, default=0, help="每个源最多处理条数（调试）")
     ap.add_argument("--no-body", action="store_true", help="不抓正文")
+    ap.add_argument("--no-attach", action="store_true", help="不下载附件")
     ap.add_argument("--no-push", action="store_true", help="不推送")
     ap.add_argument("--once-per-day", action="store_true", help="今天已跑过则跳过（供开机自启去重）")
     ap.add_argument("--digest-only", action="store_true", help="不抓取，只从库重建当日简报")
+    ap.add_argument("--weekly", action="store_true", help="生成并推送最近 7 天周报")
     args = ap.parse_args()
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -306,6 +374,20 @@ def main():
         with open(dp, "w", encoding="utf-8") as f:
             f.write(md0)
         log(f"简报已重建: {dp}")
+        return
+    if args.weekly:
+        conn1 = open_db()
+        wd = build_weekly_md(conn1, today)
+        if wd is None:
+            log("本周没有通知。")
+            return
+        os.makedirs(os.path.join(BASE, CFG["digest_dir"]), exist_ok=True)
+        wp = os.path.join(BASE, CFG["digest_dir"], f"weekly-{today}.md")
+        with open(wp, "w", encoding="utf-8") as f:
+            f.write(wd)
+        log(f"周报已生成: {wp}")
+        if not args.no_push:
+            push_message(f"华工通知周报 · {today}", wd)
         return
     cutoff = (datetime.now() - timedelta(days=args.days)).strftime("%Y-%m-%d")
     log(f"时间窗 >= {cutoff}   共 {len(CFG['sources'])} 个数据源\n")
@@ -354,20 +436,28 @@ def main():
 
         for it in fresh:
             ext = not re.search(r"scut\.edu\.cn", it["url"])
-            body = ""
+            body, atts = "", []
             if not ext and not args.no_body:
                 try:
-                    body = fetch_body(it["url"], "jw" if it["uid"].startswith("jw:") else "boda")
+                    body, atts = fetch_body(it["url"], "jw" if it["uid"].startswith("jw:") else "boda")
                     time.sleep(CFG["delay"])
                 except Exception as e:
                     log(f"       正文失败: {str(e)[:50]}")
+            saved_atts = []
+            if atts and not args.no_attach:
+                saved_atts = download_attachments(atts, it["date"], it["uid"], it["url"])
             summary = " ".join(body.split())[:180]
             if not ext and not body:
                 summary = "（该通知为站内跳转页，正文需登录后查看）"
-            it.update(external=int(ext), body=body[:20000], summary=summary)
-            conn.execute("INSERT OR REPLACE INTO notices VALUES(?,?,?,?,?,?,?,?,?,?)",
-                         (it["uid"], it["site"], it["column"], it["title"], it["url"],
-                          it["date"], it["body"], it["summary"], it["external"], today))
+            it.update(external=int(ext), body=body[:20000], summary=summary,
+                      attachments=saved_atts)
+            conn.execute(
+                "INSERT OR REPLACE INTO notices"
+                "(uid,site,column_name,title,url,pub_date,body,summary,external,fetched_at,attachments)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                (it["uid"], it["site"], it["column"], it["title"], it["url"],
+                 it["date"], it["body"], it["summary"], it["external"], today,
+                 json.dumps(saved_atts, ensure_ascii=False)))
             fresh_all.append(it)
         conn.commit()
 
