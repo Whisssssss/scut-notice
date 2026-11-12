@@ -83,15 +83,15 @@ python search.py 期末 考试 --site 学院
 
 Windows 上也可以双击 `run.bat`。
 
-## 4. 定时（Windows）
+## 4. 定时（**Windows**系统）
 
-**方式 A：计划任务（每天固定时间）**
+** A：计划任务（每天固定时间）**
 
 ```bat
 schtasks /Create /F /TN "SCUT-Notice-Daily" /TR "wscript.exe \"D:\\path\\to\\scut-notice\\run_hidden.vbs\"" /SC DAILY /ST 07:30
 ```
 
-**方式 B：开机自启（登录时补跑）**
+** B：开机自启（登录时补跑）**
 
 把 `run_hidden.vbs` 的快捷方式放进启动文件夹：
 
