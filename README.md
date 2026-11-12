@@ -1,8 +1,12 @@
 # SCUT Notice Crawler · 华南理工大学通知抓取
 
-每天自动抓取华南理工大学的通知，增量去重、正文入库、生成带目录的简报，推送到邮箱（可以使用QQ邮箱并绑定微信，这样微信就会每天推送新通知）。
+每天自动抓取华南理工大学的通知，包含增量去重、正文入库、生成带目录的简报等功能。
+
+还可以推送到邮箱（**推荐使用QQ邮箱并绑定微信，这样微信就会每天推送新通知**）。
 
 纯 Python 标准库实现，**零第三方依赖**。
+
+>给化院的本科生同学用的，会抓化院的网页消息♥
 
 ## 抓取范围
 
@@ -30,7 +34,7 @@
 | 方式 | 适合谁 | 需要什么 | 电脑要开机吗 |
 |---|---|---|---|
 | **方式一：本地运行** | 偶尔用、想完全掌控 | 自己的电脑 + Python 3.8+ | 要 |
-| **方式二：GitHub Actions** | 长期自动、不想管 | GitHub 账号 + 阿里云（反代，免费） | 不要 |
+| **方式二：GitHub Actions** | 长期自动、不想管 | GitHub 账号 + 阿里云反代（一个号的免费额度够几百人用） | 不要 |
 
 两种方式共用同一套 `fetch.py`，区别只在“谁来定时”和“谁去访问学校网站”。
 
@@ -66,9 +70,9 @@ cp config.example.json config.json
 }
 ```
 
-授权码获取：电脑登录 [mail.qq.com](https://mail.qq.com) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。**注意不是 QQ 密码。**
+授权码获取：电脑登录 [mail.qq.com](https://mail.qq.com)(或者你的目标邮箱) → 设置 → 账户 → 开启「IMAP/SMTP 服务」→ 生成授权码。**注意不是 QQ 密码。**
 
-不填 `smtp` 也能跑，只是不推送、只存本地。
+不填 `smtp` 也可以用，只是不能推送、抓下来的通知只存到本地\digest目录下的**<日期>.md**文件中。
 
 ## 3. 运行
 
@@ -107,7 +111,7 @@ schtasks /Create /F /TN "SCUT-Notice-Daily" /TR "wscript.exe \"D:\\path\\to\\scu
 schtasks /Delete /TN "SCUT-Notice-Daily" /F
 ```
 
-## 5. 定时（Linux）
+## 5. 定时（**Linux**）
 
 ```cron
 30 7 * * * cd /path/to/scut-notice && /usr/bin/python3 fetch.py >> logs/cron.log 2>&1
