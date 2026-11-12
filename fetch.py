@@ -36,6 +36,11 @@ CTX.set_ciphers("DEFAULT:@SECLEVEL=0")
 DATE_RE = re.compile(r"(20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})")
 UA = CFG["user_agent"]
 
+# 本科生院域名可用环境变量覆盖为空字符串时回落官方域名
+# 用途：GitHub Actions 在国外访问 jw.scut.edu.cn 会被 WAF 返回 403，
+# 可用国内反向代理（如阿里云 FC 函数 URL）作为出口。
+JW_BASE = (os.environ.get("JW_BASE") or "https://jw.scut.edu.cn").rstrip("/")
+
 def log(msg):
     print(msg, flush=True)
 
@@ -87,12 +92,12 @@ def parse_boda(html, base):
     return out
 
 def parse_jw(cat, page, size=50):
-    body = http_get("https://jw.scut.edu.cn/zhinan/cms/article/v2/findInformNotice.do",
+    body = http_get(f"{JW_BASE}/zhinan/cms/article/v2/findInformNotice.do",
                     data={"category": cat, "tag": "", "keyword": "", "pageNum": page, "pageSize": size},
-                    referer="https://jw.scut.edu.cn/zhinan/cms/index.do")
+                    referer=f"{JW_BASE}/zhinan/cms/index.do")
     j = json.loads(body)
     rows = [{"title": it["title"],
-             "url": "https://jw.scut.edu.cn/zhinan/cms/article/view.do?type=posts&id=" + it["id"],
+             "url": f"{JW_BASE}/zhinan/cms/article/view.do?type=posts&id={it['id']}",
              "date": it["createTime"].replace(".", "-"),
              "id": it["id"]} for it in j.get("list", [])]
     return j.get("total", 0), rows

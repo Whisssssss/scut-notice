@@ -41,4 +41,7 @@ jobs:
           EOF
 
       - name: Weekly report
+        env:
+          # 可选：国内反向代理地址，解决 jw.scut.edu.cn 的 403；留空则用官方域名
+          JW_BASE: ${{ secrets.JW_BASE }}
         run: python fetch.py --weekly
