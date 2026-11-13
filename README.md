@@ -135,6 +135,8 @@ schtasks /Delete /TN "SCUT-Notice-Daily" /F
 
 # 方式二：GitHub Actions（推荐）
 
+> 实测有个缺点，schedule的运行优先级比较低，实际设定的北京时间7点半可能会延后一段时间才开始运行
+
 电脑关机也能跑，零成本。
 
 ## 为什么还需要一台阿里云函数 
