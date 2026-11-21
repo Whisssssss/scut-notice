@@ -77,20 +77,37 @@ def page_url(url, p):
 
 # ---------- 列表解析 ----------
 def parse_boda(html, base):
+    """解析博达 CMS 列表页，兼容两种列表模板：
+
+    1. <a href="..." title="标题">...</a> <span class="date">2026-11-20</span>
+    2. <a href="..."><div class="title">标题</div><div class="date">2026-11-20</div></a>
+    """
     out, seen = [], set()
-    for m in re.finditer(r"""<a\s[^>]*href=['"]([^'"]+)['"][^>]*title=['"]([^'"]*)['"][^>]*>""", html):
-        href, title = m.group(1), m.group(2).strip()
-        if not href or href.startswith("javascript") or not title:
-            continue
-        dm = DATE_RE.search(html[m.end():m.end() + 500])
+
+    def push(href, title, dm):
+        title = (title or "").strip()
+        if not href or href.startswith("javascript") or not title or not dm:
+            return
+        url = base + href if href.startswith("/") else href
+        if url in seen:
+            return
+        seen.add(url)
+        out.append({"title": title, "url": url, "date": norm_date(dm)})
+
+    # 模式 1：链接带 title 属性，日期在链接后方
+    for m in re.finditer(
+            r"""<a\s[^>]*href=['"]([^'"]+)['"][^>]*title=['"]([^'"]*)['"][^>]*>""", html):
+        push(m.group(1), m.group(2), DATE_RE.search(html[m.end():m.end() + 500]))
+
+    # 模式 2：链接内嵌 title/date 块（校团委等栏目）
+    for m in re.finditer(
+            r"""<a\s[^>]*href=['"]([^'"]+)['"][^>]*>([\s\S]{0,400}?)</a>""", html):
+        inner = m.group(2)
+        dm = DATE_RE.search(inner)
         if not dm:
             continue
-        if href.startswith("/"):
-            href = base + href
-        if href in seen:
-            continue
-        seen.add(href)
-        out.append({"title": title, "url": href, "date": norm_date(dm)})
+        title = DATE_RE.sub(" ", re.sub(r"<[^>]+>", " ", inner))
+        push(m.group(1), re.sub(r"\s+", " ", title).strip(), dm)
     return out
 
 def parse_jw(cat, page, size=50):

@@ -93,6 +93,13 @@
       "column": "学院通知",
       "type": "jw",
       "category": 1
+    },
+    {
+      "site": "校团委",
+      "column": "通知公告",
+      "type": "boda",
+      "url": "https://www2.scut.edu.cn/youth/tzgg/list.htm",
+      "base": "https://www2.scut.edu.cn"
     }
   ]
 }
